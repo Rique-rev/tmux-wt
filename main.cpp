@@ -105,7 +105,7 @@ std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
     }
 
     std::string action = "";
-    action += "tmux has-session -t '";
+    action += "run-shell \\\"tmux has-session -t '";
     action += display_name;
     action += "' 2>/dev/null || tmux new-session -d -s '";
     action += display_name;
@@ -113,7 +113,7 @@ std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
     action += wt.path;
     action += "' ; tmux switch-client -t '";
     action += display_name;
-    action += "'";
+    action += "'\\\"";
 
     tmux_cmd += "\"";
     tmux_cmd += display_name;
