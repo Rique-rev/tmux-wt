@@ -8,6 +8,16 @@
 #include <string_view>
 #include <vector>
 
+struct Worktree {
+  std::string path;
+  std::string short_sha1;
+  std::string branch_name;
+};
+
+enum class UiMode { kTmux, kFzf };
+
+/**************************************************************************************************/
+
 std::optional<std::string> execute_command(const std::string& cmd) {
 
   std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"),
@@ -34,11 +44,7 @@ std::optional<std::string> execute_command(const std::string& cmd) {
   return result;
 }
 
-struct Worktree {
-  std::string path;
-  std::string short_sha1;
-  std::string branch_name;
-};
+/**************************************************************************************************/
 
 std::vector<Worktree> parse_worktrees(std::string_view git_output) {
 
@@ -89,6 +95,8 @@ std::vector<Worktree> parse_worktrees(std::string_view git_output) {
 
   return worktrees;
 };
+
+/**************************************************************************************************/
 
 std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
   std::string tmux_cmd = "";
@@ -143,26 +151,117 @@ std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
   return tmux_cmd;
 };
 
-auto main() -> int {
+/**************************************************************************************************/
+
+std::string build_fzf_output(const std::vector<Worktree>& worktrees) {
+  std::string output = "";
+  std::string current_path = std::filesystem::current_path().string();
+
+  for (const auto& wt : worktrees) {
+    std::string display_name = wt.branch_name;
+    if (display_name.empty()) {
+      display_name = std::filesystem::path(wt.path).filename().string();
+    }
+
+    std::string action = "";
+
+    if (wt.path == current_path) {
+      action += "tmux select-window -t ':";
+      action += display_name;
+      action += "' 2>/dev/null || tmux rename-window '";
+      action += display_name;
+      action += "'";
+    } else {
+      action += "tmux select-window -t ':";
+      action += display_name;
+      action += "' 2>/dev/null || tmux new-window -n '";
+      action += display_name;
+      action += "' -c '";
+      action += wt.path;
+      action += "'";
+    }
+
+    // Format: Display String \t Action Command \t Raw Name \n
+    output += display_name + " (" + wt.short_sha1 + ")\t";
+    output += action + "\t";
+    output += display_name + "\n";
+  }
+
+  return output;
+}
+
+/**************************************************************************************************/
+
+void print_help() {
+  std::cout << "Usage: tmux-wt [OPTIONS]\n\n"
+            << "A blazingly fast tmux plugin for managing Git Worktrees.\n\n"
+            << "Options:\n"
+            << "  tmux-ui    Use the native tmux display-menu UI (Default)\n"
+            << "  fzf-ui     Output TSV format for fzf integration\n"
+            << "  --help     Display this help message and exit\n";
+}
+
+/**************************************************************************************************/
+
+auto main(int argc, char* argv[]) -> int {
+
+  UiMode mode = UiMode::kTmux;
+
+  if (argc > 1) {
+    std::string_view arg(argv[1]);
+
+    if (arg == "--help") {
+      print_help();
+      return 0;
+    } else if (arg == "tmux-ui") {
+      mode = UiMode::kTmux;
+    } else if (arg == "fzf-ui") {
+      mode = UiMode::kFzf;
+    } else {
+      std::cerr << "Error: Invalid argument '" << arg << "'.\n"
+                << "Run 'tmux-wt --help' for available options.\n";
+      return 1;
+    }
+  }
+
+  // If there are more than 2 arguments, it's an invalid usage
+  if (argc > 2) {
+    std::cerr << "Error: Too many arguments provided.\n"
+              << "Run 'tmux-wt --help' for available options.\n";
+    return 1;
+  }
 
   auto output = execute_command("git worktree list --porcelain");
 
   if (!output.has_value()) {
-    std::cout << "tmux display-message 'Error: It was not possible to read Git "
-                 "Worktrees.'\n";
+    // We only output a tmux display-message if we are in Tmux mode,
+    // otherwise we output to stderr to not break fzf pipes.
+    if (mode == UiMode::kTmux) {
+      std::cout << "tmux display-message 'Error: It was not possible to read "
+                   "Git Worktrees.'\n";
+    } else {
+      std::cerr << "Error: It was not possible to read Git Worktrees.\n";
+    }
+
     return 1;
   }
 
   auto worktrees = parse_worktrees(output.value());
 
   if (worktrees.empty()) {
-    std::cout << "tmux display-message 'No Git Worktree found.'\n";
+    if (mode == UiMode::kTmux) {
+      std::cout << "tmux display-message 'No Git Worktree found.'\n";
+    } else {
+      std::cerr << "No Git Worktree found.\n";
+    }
     return 0;
   }
 
-  auto tmux_cmd = build_tmux_menu_command(worktrees);
-
-  std::cout << tmux_cmd << "\n";
+  if (mode == UiMode::kFzf) {
+    std::cout << build_fzf_output(worktrees);
+  } else {
+    std::cout << build_tmux_menu_command(worktrees);
+  }
 
   return 0;
 }
