@@ -92,6 +92,7 @@ std::vector<Worktree> parse_worktrees(std::string_view git_output) {
 
 std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
   std::string tmux_cmd = "";
+  std::string current_path = std::filesystem::current_path().string();
 
   tmux_cmd += "tmux display-menu -T \" Git Worktrees \" ";
 
@@ -105,15 +106,28 @@ std::string build_tmux_menu_command(const std::vector<Worktree>& worktrees) {
     }
 
     std::string action = "";
-    action += "run-shell \\\"tmux has-session -t '";
-    action += display_name;
-    action += "' 2>/dev/null || tmux new-session -d -s '";
-    action += display_name;
-    action += "' -c '";
-    action += wt.path;
-    action += "' ; tmux switch-client -t '";
-    action += display_name;
-    action += "'\\\"";
+
+    if (wt.path == current_path) {
+      // If the user is already inside this worktree directory:
+      // Try to select the target window.
+      // If it doesn't exist, rename the current window instead.
+      action += "run-shell \\\"tmux select-window -t ':";
+      action += display_name;
+      action += "' 2>/dev/null || tmux rename-window '";
+      action += display_name;
+      action += "'\\\"";
+    } else {
+      // If the user is in a different worktree directory:
+      // Try to select the target window.
+      // If it doesn't exist, spawn a new window at the target path.
+      action += "run-shell \\\"tmux select-window -t ':";
+      action += display_name;
+      action += "' 2>/dev/null || tmux new-window -n '";
+      action += display_name;
+      action += "' -c '";
+      action += wt.path;
+      action += "'\\\"";
+    }
 
     tmux_cmd += "\"";
     tmux_cmd += display_name;
