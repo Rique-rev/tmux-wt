@@ -7,6 +7,10 @@ with tmux sessions.
 native tmux interactive menu. Selecting a worktree instantly switches your tmux client to a
 dedicated session for that branch, creating it in the background if it doesn't already exist.
 
+<p align="center">
+  <img src="images/tmux-wt.png" alt="tmux-wt interactive worktree menu" width="820">
+</p>
+
 ## Features
 
 - **Blazing Fast Parsing:** Core logic is written in C++17, ensuring zero lag when parsing
