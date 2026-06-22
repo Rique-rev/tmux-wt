@@ -1,3 +1,0 @@
-/home/henrique/Documentos/projetos/tmux-worktree/CMakeFiles/tmux-worktree.dir
-/home/henrique/Documentos/projetos/tmux-worktree/CMakeFiles/edit_cache.dir
-/home/henrique/Documentos/projetos/tmux-worktree/CMakeFiles/rebuild_cache.dir

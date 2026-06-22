@@ -1,1 +1,0 @@
-/usr/bin/c++ "CMakeFiles/tmux-worktree.dir/main.cpp.o" -o tmux-worktree 
