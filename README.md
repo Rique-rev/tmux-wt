@@ -54,7 +54,7 @@ repository and build it locally before adding it to your tmux configuration.
 1. Clone the repository:
 
 ```bash
-git clone [https://github.com/Rique-rev/tmux-wt.git](https://github.com/Rique-rev/tmux-wt.git) ~/tmux-wt
+git clone https://github.com/Rique-rev/tmux-wt.git ~/tmux-wt
 cd ~/tmux-wt
 mkdir build
 ```
@@ -64,7 +64,7 @@ Fetch the latest release directly from GitHub and give it execution permissions
 (make sure to replace v1.0.0 with the latest version available on the Releases page):
 
 ```bash
-wget [https://github.com/Rique-rev/tmux-wt/releases/download/v1.0.0/tmux-wt-linux-amd64](https://github.com/Rique-rev/tmux-wt/releases/download/v1.0.0/tmux-wt-linux-amd64) -O ~/tmux-wt/build/tmux-wt
+wget https://github.com/Rique-rev/tmux-wt/releases/download/v1.0.0/tmux-wt-linux-amd64 -O ~/tmux-wt/build/tmux-wt
 chmod +x ~/tmux-wt/build/tmux-wt
 ```
 
